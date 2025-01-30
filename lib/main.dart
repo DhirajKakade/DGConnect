@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dgplay/login_page.dart';
 import 'package:dgplay/play_list_page.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -15,6 +17,7 @@ Future<void> main() async {
   String custid = sharedPreferences.getString('custid')??"";
   String serialno = sharedPreferences.getString('serialno')??"";
   String screenid = sharedPreferences.getString('screenid')??"";
+  HttpOverrides.global = MyHttpOverrides();
 
   // runApp(MainPage());
   runApp(MainPage(
@@ -25,6 +28,15 @@ Future<void> main() async {
     screenid: screenid,
   ));
 }
+
+class MyHttpOverrides extends HttpOverrides{
+  @override
+  HttpClient createHttpClient(SecurityContext? context){
+    return super.createHttpClient(context)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+  }
+}
+
 
 class MainPage extends StatelessWidget {
   final String checkLogin, custid, userid, serialno, screenid;

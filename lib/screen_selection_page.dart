@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dgplay/play_list_page.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'login_page.dart';
 import 'constants/api_constants.dart' as globals;
 import 'constants/api_constants.dart';
+import 'package:http/http.dart' as http;
+
+import 'package:http/io_client.dart';
+
 
 class ScreenSelectionPage extends StatefulWidget {
   final String user_id, customer_id, serialno /*, user_name*/;
@@ -308,7 +313,13 @@ class _ScreenSelectionPageState extends State<ScreenSelectionPage> {
 
     print("ody");
 
-    http.Response response = await http.post(apiUrl, body: body, headers: headers);
+    // (apiUrl, body: body, headers: headers);
+    final ioc = HttpClient();
+    ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    final httpClient = IOClient(ioc);
+
+    final response = await httpClient.post(apiUrl, body: body, headers: headers);
+//    http.Response response = await http.post(apiUrl, body: body, headers: headers);
 
     print("REsisne $response");
 

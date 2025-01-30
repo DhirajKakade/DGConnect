@@ -8,6 +8,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dgplay/functions.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -327,8 +329,15 @@ class _LoginPageState extends State<LoginPage> {
       'full_device_details': full_device_details,
     };
 
+
     try {
-      http.Response response = await http.post(apiUrl, body: body, headers: headers);
+      final ioc = HttpClient();
+      ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      final httpClient = IOClient(ioc);
+
+      final response = await httpClient.post(apiUrl, body: body, headers: headers);
+
+//      http.Response response = await http.post(apiUrl, body: body, headers: headers);
 
       var data = json.decode(response.body);
 
@@ -370,7 +379,13 @@ class _LoginPageState extends State<LoginPage> {
       'serial_no': serial_no,
     };
 
-    http.Response response = await http.post(apiUrl, body: body, headers: headers);
+    final ioc = HttpClient();
+    ioc.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+    final httpClient = IOClient(ioc);
+
+    final response = await httpClient.post(apiUrl, body: body, headers: headers);
+
+    // http.Response response = await http.post(apiUrl, body: body, headers: headers);
 
     print(utf8.decode(response.bodyBytes));
     var data = json.decode(utf8.decode(response.bodyBytes));
