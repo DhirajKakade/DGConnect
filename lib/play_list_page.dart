@@ -61,7 +61,8 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     _channel = const MethodChannel('bms_video_player');
     _channel.setMethodCallHandler(_handleMethod);
 
-    initDb();
+
+    initDb(true);
     print(widget.serialno);
 
     /* if (!kIsWeb) {
@@ -100,11 +101,11 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     }*/
   }
 
-  initDb() async {
+  initDb(bool isFirstUpdate) async {
     sharedPreferences = await SharedPreferences.getInstance();
     isRunningAds = true;
     // isInternet();
-    checkInternetConnection();
+    checkInternetConnection(isFirstUpdate);
   }
 
   // Future<bool> isInternet() async {
@@ -202,7 +203,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
   //   }
   // }
 
-  Future<bool> checkInternetConnection() async {
+  Future<bool> checkInternetConnection(bool isFirstUpdate) async {
     try {
       var response = await http.get(Uri.parse('https://google.com'));
       if (response.statusCode == 200) {
@@ -231,7 +232,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                   timer.cancel();
                 }
 
-                await getPlayList(widget.serialno, widget.screenid, widget.custid, widget.userid);
+                await getPlayList(widget.serialno, widget.screenid, widget.custid, widget.userid, );
                 print("UPDATED");
 
                 print("APICALL");
@@ -276,7 +277,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
                   Map<String, String> body = {
                     'device_id': deviceId, 'screen_id': screenid, 'customer_id': custid, 'user_id': userid, 'media_id': media_id, // 2022-10-01
-                    'report_date': s.replaceAll("_", "-"), 'count': '${lastCount}',
+                    'report_date': s.replaceAll("_", "-"), 'count': '$lastCount',
                   };
                   if (lastCount != 0) {
                     await updateCountServer(body, data);
@@ -353,7 +354,6 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                     Expanded(
                         child: WebViewWidget(
                       controller: webController,
-
                     )),
                   ]
 
@@ -379,7 +379,9 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                       child: Center(
                         child: CachedNetworkImage(
                           imageUrl: data['data'][index]['media_url'],
-                          fit: BoxFit.contain,
+                          fit: BoxFit.fill,
+                          height: double.infinity,
+                          width: double.infinity,
                         ),
                       ),
                     ),
@@ -436,11 +438,13 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
 
   dynamic isDelay;
   dynamic timer;
+  bool isVeryFirstCall = true;
 
   updateData() {
     if (isRunningAds && mounted) {
       debugPrint("MOUNTED : $mounted");
 
+      print("index:::: $index");
       if (index == -1) {
         return;
       }
@@ -451,7 +455,14 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
           isDelay = null;
         }
 
-        timer = Timer(Duration(seconds: int.parse(data['data'][index]['duration_sec'])), () async {
+        int iDuration = int.parse(data['data'][index]['duration_sec']);
+
+        if(isVeryFirstCall) {
+          iDuration = 1;
+          isVeryFirstCall = false;
+        }
+
+        timer = Timer(Duration(seconds: iDuration), () async {
           if (controller != null) {
             controller.dispose();
             controller = null;
@@ -474,10 +485,8 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
                 late final PlatformWebViewControllerCreationParams params;
                 if (WebViewPlatform.instance is WebKitWebViewPlatform) {
                   params = WebKitWebViewControllerCreationParams(
-                    allowsInlineMediaPlayback: true,
-                    mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
-                  //   initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow, allowsInlineMediaPlayback: true
-
+                    allowsInlineMediaPlayback: true, mediaTypesRequiringUserAction: const <PlaybackMediaTypes>{},
+                    //   initialMediaPlaybackPolicy: AutoMediaPlaybackPolicy.always_allow, allowsInlineMediaPlayback: true
                   );
                 } else {
                   params = const PlatformWebViewControllerCreationParams();
@@ -650,7 +659,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     sharedPreferences!.setInt('count_' + media_id + "_" + screenid + "_" + userid + "_" + date, lastCount);
     debugPrint(date.toString());
 
-    if (lastCount > 10) {
+    if (lastCount > 2) {
       DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       // String deviceId = await PlatformDeviceId.getDeviceId??"";
@@ -659,7 +668,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
       String formattedDate = now.year.toString() + "-" + now.month.toString() + "-" + now.day.toString();
       Map<String, String> body = {
         'device_id': deviceId, 'screen_id': screenid, 'customer_id': custid, 'user_id': userid, 'media_id': media_id, // 2022-10-01
-        'report_date': formattedDate, 'count': '${lastCount}',
+        'report_date': formattedDate, 'count': '$lastCount',
       };
 
       sharedPreferences!.setInt('count_' + media_id + "_" + screenid + "_" + userid + "_" + date, 0);
@@ -744,7 +753,7 @@ class _PlayListPageState extends State<PlayListPage> with WidgetsBindingObserver
     );
   }
 
-  Future getPlayList(String serialno, String screenid, String custid, String userid) async {
+  Future getPlayList(String serialno, String screenid, String custid, String userid,) async {
     var apiUrl = Uri.parse('${globals.base_url}/getPlaylist');
 
     print(apiUrl);
