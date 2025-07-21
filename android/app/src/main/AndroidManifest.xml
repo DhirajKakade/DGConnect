@@ -23,10 +23,10 @@
         tools:targetApi="eclair" />
 
     <application
-
         android:label="DG Connect"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
+        android:hardwareAccelerated="true"
         tools:targetApi="lollipop">
         <activity
             android:name=".MainActivity"

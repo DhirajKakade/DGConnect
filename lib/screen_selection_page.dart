@@ -1,25 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dgplay/play_list_page.dart';
+import 'package:dgplay/play_list_new_page.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'login_page.dart';
 import 'constants/api_constants.dart' as globals;
-import 'constants/api_constants.dart';
-import 'package:http/http.dart' as http;
-
-import 'package:http/io_client.dart';
-
+import 'login_page.dart';
 
 class ScreenSelectionPage extends StatefulWidget {
   final String user_id, customer_id, serialno /*, user_name*/;
 
-  ScreenSelectionPage({Key? key, required this.user_id, required this.customer_id, required this.serialno /*, this.user_name*/
+  const ScreenSelectionPage({Key? key, required this.user_id, required this.customer_id, required this.serialno /*, this.user_name*/
       })
       : super(key: key);
 
@@ -84,9 +79,16 @@ class _ScreenSelectionPageState extends State<ScreenSelectionPage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.red,
-        title: const Text("Ads", style: TextStyle(color: Colors.white),),
+        title: const Text(
+          "Ads",
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
-          Center(child: Text(username,style: const TextStyle(color: Colors.white),)),
+          Center(
+              child: Text(
+            username,
+            style: const TextStyle(color: Colors.white),
+          )),
           const SizedBox(
             width: 10,
           ),
@@ -213,9 +215,9 @@ class _ScreenSelectionPageState extends State<ScreenSelectionPage> {
                               );
                             }
 
-                            return Center(
+                            return const Center(
                                 child: Column(
-                              children: const [
+                              children: [
                                 CircularProgressIndicator(
                                   color: Colors.red,
                                 ),
@@ -242,7 +244,8 @@ class _ScreenSelectionPageState extends State<ScreenSelectionPage> {
                           print("Class Value : $_classValue");
 
                           Navigator.of(context).push(MaterialPageRoute<Map>(builder: (BuildContext context) {
-                            return PlayListPage(
+                            return PlayList(
+                              prefs: sharedPreferences,
                               screenid: imageindex == 0 ? _classValue : imageindex.toString(),
                               serialno: widget.serialno,
                               userid: widget.user_id,
@@ -287,7 +290,12 @@ class _ScreenSelectionPageState extends State<ScreenSelectionPage> {
               autofocus: true,
               onPressed: () async {
                 SharedPreferences preferences = await SharedPreferences.getInstance();
+
+                String serialNo = preferences.getString("serialNo") ?? "";
                 await preferences.clear();
+
+                preferences.setString("serialNo", serialNo);
+
                 Navigator.of(context).pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage()));
               },

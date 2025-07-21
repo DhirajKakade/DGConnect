@@ -5,11 +5,11 @@ import 'dart:io';
 // import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:android_intent_plus/android_intent.dart' as androidIntent;
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:dgplay/api_service.dart';
 import 'package:dgplay/functions.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -27,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   TextEditingController _usernameFieldController = TextEditingController();
   TextEditingController _passwordFieldController = TextEditingController();
+  bool isLoginById = false;
   bool apiCall = false;
   var _loginResult;
   var user_id, custid, msg, username;
@@ -34,6 +35,7 @@ class _LoginPageState extends State<LoginPage> {
   Future? api;
   String serialno = "";
   String device_name = "", uuid = "", device_info = "", allDeviceData = "";
+  TextEditingController codeController = TextEditingController();
 
   @override
   void initState() {
@@ -74,6 +76,11 @@ class _LoginPageState extends State<LoginPage> {
     };
   }
 
+  String idGenerator() {
+    final now = DateTime.now();
+    return now.microsecondsSinceEpoch.toString();
+  }
+
   Future<void> getdeviceInfo() async {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
@@ -84,15 +91,22 @@ class _LoginPageState extends State<LoginPage> {
 
     bool isTV = androidInfo.systemFeatures.contains('android.software.leanback_only');
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
-    await sharedPreferences.setString('serialno', androidInfo.id);
+    // await sharedPreferences.setString('serialno', androidInfo.id);
     // String deviceId = await PlatformDeviceId.getDeviceId ?? "";
 
-    uuid = androidInfo.id;
+    String serialno = sharedPreferences.getString("serialNo") ?? "";
+
+    if (serialno.isEmpty) {
+      serialno = idGenerator();
+    }
+
+    await sharedPreferences.setString('serialNo', serialno);
+
     device_name = androidInfo.model;
     device_info = androidInfo.brand;
 
     // setState(() {
-    serialno = androidInfo.id;
+    // serialno = androidInfo.id;
 
     allDeviceData = jsonEncode(androidInfo.data);
     //   device_name = androidInfo.model;
@@ -133,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
               ],
               Center(
                 child: Container(
-                  width: MediaQuery.sizeOf(context).width/2,
+                  width: MediaQuery.sizeOf(context).width / 2,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: ListView(
                     shrinkWrap: true,
@@ -180,68 +194,167 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 40.0),
-                        child: (apiCall)
-                            ? const Center(
-                                child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                              ))
-                            : ButtonTheme(
-                                minWidth: MediaQuery.of(context).size.width * 0.10,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.black,
-                                  ), // color: Colors.white,
-                                  child: const Text(
-                                    'LOGIN',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  onPressed: () async {
-                                    FocusScope.of(context).requestFocus(new FocusNode());
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: isLoginById
+                                    ? const Center(
+                                        child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                      ))
+                                    : ButtonTheme(
+                                        minWidth: MediaQuery.of(context).size.width * 0.10,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                          ), // color: Colors.white,
+                                          child: const Text(
+                                            'LOGIN BY ID',
+                                            style: TextStyle(color: Colors.white),
+                                            maxLines: 1,
+                                          ),
+                                          onPressed: () async {
+                                            //   https://ads.dgplay.live/API/Mobile/AuthCode/web
+                                            // ApiService().authCodeLogin;
+                                            dynamic action = await showDialog(
+                                              context: context,
 
-                                    if (_usernameFieldController.text == "" || _passwordFieldController.text == "") {
-                                      // Toast.show("Both emailId and password are required", duration: 5, gravity: Toast.bottom);
-                                      showSnack(context, "Both emailId and password are required");
-                                      // || connectivityResult == ConnectivityResult.ethernet || connectivityResult == ConnectivityResult.mobile
-                                    } else {
-                                      setState(() {
-                                        apiCall = true;
-                                      });
-                                      print("SERIAL NO : $serialno");
+                                              builder: (context) => AlertDialog(
+                                                scrollable: true,
+                                                title: const Text("Enter Code"),
+                                                content: TextField(
+                                                  autofocus: true,
+                                                  decoration: const InputDecoration(
+                                                    hintText: "CF413F-619",
+                                                    border: UnderlineInputBorder(
+                                                      borderSide: BorderSide(color: Colors.red),
+                                                    ),
+                                                    focusedBorder: UnderlineInputBorder(
+                                                      borderSide: BorderSide(color: Colors.red), // Focused underline color
+                                                    ),
+                                                  ),
+                                                  controller: codeController,
+                                                  cursorColor: Colors.red,
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: const Text("Close", style: TextStyle(color: Colors.black),)),
+                                                  MaterialButton(
+                                                      color: Colors.red,
+                                                      textColor: Colors.white,
+                                                      onPressed: () {
+                                                        Navigator.pop(context, true);
+                                                      },
+                                                      child: const Text("Connect"))
+                                                ],
+                                              ),
+                                            );
 
-                                      _loginResult = await loginUser(_usernameFieldController.text, _passwordFieldController.text, serialno);
-                                      if (await _loginResult == true) {
-                                        // Toast.show(msg, duration: 5, gravity: Toast.bottom);
-                                        if (context.mounted) {
-                                          showSnack(context, msg);
-                                        }
+                                            if (action != null && action && codeController.text.isNotEmpty) {
 
-                                        print("USER ID : $user_id + CUST ID : $custid");
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (context) => ScreenSelectionPage(
-                                                    user_id: user_id,
-                                                    customer_id: custid,
-                                                    serialno: serialno, /*user_name: username,*/
-                                                  )),
-                                        );
-                                        print("Success Login");
-                                      } else {
-                                        setState(() {
-                                          apiCall = false;
-                                        });
-                                        // Toast.show(msg, duration: 5, gravity: Toast.bottom);
+                                              SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
-                                        if (context.mounted) {
-                                          showSnack(context, msg);
-                                        }
+                                              String serialNo = sharedPreferences.getString("serialNo") ?? "";
 
-                                        print("Failed Login");
-                                      }
-                                    }
-                                  },
-                                ),
+                                              if (serialNo.isEmpty) {
+                                                serialNo = idGenerator();
+                                              }
+
+                                              await sharedPreferences.setString('serialNo', serialNo);
+                                              if (context.mounted) {
+                                                await ApiService().authCodeLogin(context, sharedPreferences, codeController.text, serialNo);
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
                               ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: apiCall
+                                    ? const Center(
+                                        child: CircularProgressIndicator(
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                                      ))
+                                    : ButtonTheme(
+                                        minWidth: MediaQuery.of(context).size.width * 0.10,
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.black,
+                                          ), // color: Colors.white,
+                                          child: const Text(
+                                            'LOGIN',
+                                            maxLines: 1,
+                                            style: TextStyle(color: Colors.white),
+                                          ),
+                                          onPressed: () async {
+                                            FocusScope.of(context).requestFocus(new FocusNode());
+
+                                            if (_usernameFieldController.text == "" || _passwordFieldController.text == "") {
+                                              // Toast.show("Both emailId and password are required", duration: 5, gravity: Toast.bottom);
+                                              showSnack(context, "Both emailId and password are required");
+                                              // || connectivityResult == ConnectivityResult.ethernet || connectivityResult == ConnectivityResult.mobile
+                                            } else {
+                                              setState(() {
+                                                apiCall = true;
+                                              });
+
+                                              SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+
+                                              serialno = sharedPreferences.getString("serialNo") ?? "";
+
+                                              if (serialno.isEmpty) {
+                                                serialno = idGenerator();
+                                                await sharedPreferences.setString('serialNo', serialno);
+                                              }
+
+                                              print("SERIAL NO : $serialno");
+
+                                              _loginResult = await loginUser(_usernameFieldController.text, _passwordFieldController.text, serialno);
+                                              if (await _loginResult == true) {
+                                                // Toast.show(msg, duration: 5, gravity: Toast.bottom);
+                                                if (context.mounted) {
+                                                  // showSnack(context, msg);
+                                                }
+
+                                                print("USER ID : $user_id + CUST ID : $custid");
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                      builder: (context) => ScreenSelectionPage(
+                                                            user_id: user_id,
+                                                            customer_id: custid,
+                                                            serialno: serialno, /*user_name: username,*/
+                                                          )),
+                                                );
+                                                print("Success Login");
+                                              } else {
+                                                setState(() {
+                                                  apiCall = false;
+                                                });
+                                                // Toast.show(msg, duration: 5, gravity: Toast.bottom);
+
+                                                if (context.mounted) {
+                                                  showSnack(context, msg);
+                                                }
+
+                                                print("Failed Login");
+                                              }
+                                            }
+                                          },
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(top: 8.0, bottom: 8),
@@ -278,6 +391,15 @@ class _LoginPageState extends State<LoginPage> {
   PackageInfo? packageInfo;
   Future<bool> checkInternetConnection() async {
     try {
+      SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+
+      serialno = sharedPreferences.getString("serialNo") ?? "";
+
+      if (serialno.isEmpty) {
+        serialno = idGenerator();
+        await sharedPreferences.setString('serialNo', serialno);
+      }
+
       packageInfo = await PackageInfo.fromPlatform();
 
       var response = await http.get(Uri.parse('https://google.com'));
@@ -324,11 +446,10 @@ class _LoginPageState extends State<LoginPage> {
     Map<String, String> body = {
       'device_name': device_name,
       'serial_no': serial_no,
-      'device_uuid': uuid,
+      'device_uuid': serial_no,
       'device_details': device_info,
       'full_device_details': full_device_details,
     };
-
 
     try {
       final ioc = HttpClient();
