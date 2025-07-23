@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -32,6 +33,7 @@ class _PlayListState extends State<PlayList> {
   List<dynamic> data = [];
   Map<String, dynamic> selectedData = {};
   var webController;
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -55,7 +57,9 @@ class _PlayListState extends State<PlayList> {
     super.dispose();
   }
 
+  PackageInfo? info;
   getData() async {
+    // info = await PackageInfo.fromPlatform();
     bool isData = await initData();
     if (isData) {
       updateData();
@@ -64,31 +68,38 @@ class _PlayListState extends State<PlayList> {
 
   @override
   Widget build(BuildContext context) {
+    Size size = MediaQuery.of(context).size;
     return Scaffold(
       body: Container(
         color: Colors.black,
         width: double.infinity,
         height: double.infinity,
-        child: selectedData.isEmpty
-            ? const Center(child: Text("No data available", style: TextStyle(color: Colors.white)))
-            : Stack(
-                alignment: Alignment.center,
-                children: [
-                  if (selectedData["media_type"] == "mp4") ...[
-                    Video(controller: videoController, width: double.infinity, height: double.infinity, fit: BoxFit.fill, wakelock: true, fill: Colors.transparent, alignment: Alignment.center),
-                  ] else if (selectedData["media_type"] == "jpg" || selectedData["media_type"] == "png" || selectedData["media_type"] == "jpeg") ...[
-                    Image.file(
-                      width: double.infinity,
-                      height: double.infinity,
-                      fit: BoxFit.fill,
-                      File(selectedData["file"] ?? ""),
-                      errorBuilder: (context, error, stackTrace) => Icon(Icons.image_not_supported, color: Colors.white, size: 30),
-                    ),
-                  ] else if (selectedData["media_type"] == "tag" && webController != null) ...[
-                    if (selectedData["file"] != "") ...[WebViewWidget(controller: webController)] else ...[Image.asset("name")],
-                  ],
-                ],
-              ),
+        child: isLoading
+            ? appLogo(size)
+            : selectedData.isEmpty
+                ? const Center(child: Text("No data available", style: TextStyle(color: Colors.white)))
+                : Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      if (selectedData["media_type"] == "mp4") ...[
+                        Video(controller: videoController, width: double.infinity, height: double.infinity, fit: BoxFit.fill, wakelock: true, fill: Colors.transparent, alignment: Alignment.center),
+                      ] else if (selectedData["media_type"] == "jpg" || selectedData["media_type"] == "png" || selectedData["media_type"] == "jpeg") ...[
+                        Image.file(
+                          width: double.infinity,
+                          height: double.infinity,
+                          fit: BoxFit.fill,
+                          File(selectedData["file"] ?? ""),
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image_not_supported, color: Colors.white, size: 30),
+                        ),
+                      ] else if (selectedData["media_type"] == "tag" && webController != null) ...[
+                        if (selectedData["file"] != "") ...[WebViewWidget(controller: webController)] else ...[Image.asset("name")],
+                      ],
+                      // Align(alignment: Alignment.bottomCenter, child: Padding(
+                      //   padding: const EdgeInsets.only(bottom: 8.0),
+                      //   child: Text(info != null ? info!.version : ""),
+                      // ))
+                    ],
+                  ),
       ),
       floatingActionButton: Opacity(
           // hiding the child widget
@@ -262,10 +273,12 @@ class _PlayListState extends State<PlayList> {
         ),
         (route) => false,
       );
+      isLoading = false;
       return false;
     } else {
       List<dynamic> playList = await ApiService().getPlayList(widget.prefs, widget.serialno, screenid, widget.custid, widget.userid);
       data.addAll(playList);
+      isLoading = false;
       return true;
     }
   }

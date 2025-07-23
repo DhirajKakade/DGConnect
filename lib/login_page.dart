@@ -220,14 +220,13 @@ class _LoginPageState extends State<LoginPage> {
                                             // ApiService().authCodeLogin;
                                             dynamic action = await showDialog(
                                               context: context,
-
                                               builder: (context) => AlertDialog(
                                                 scrollable: true,
                                                 title: const Text("Enter Code"),
                                                 content: TextField(
                                                   autofocus: true,
                                                   decoration: const InputDecoration(
-                                                    hintText: "CF413F-619",
+                                                    labelText: "CF413F-619",
                                                     border: UnderlineInputBorder(
                                                       borderSide: BorderSide(color: Colors.red),
                                                     ),
@@ -243,7 +242,10 @@ class _LoginPageState extends State<LoginPage> {
                                                       onPressed: () {
                                                         Navigator.pop(context);
                                                       },
-                                                      child: const Text("Close", style: TextStyle(color: Colors.black),)),
+                                                      child: const Text(
+                                                        "Close",
+                                                        style: TextStyle(color: Colors.black),
+                                                      )),
                                                   MaterialButton(
                                                       color: Colors.red,
                                                       textColor: Colors.white,
@@ -256,6 +258,34 @@ class _LoginPageState extends State<LoginPage> {
                                             );
 
                                             if (action != null && action && codeController.text.isNotEmpty) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  SnackBar(
+                                                    content: StatefulBuilder(
+                                                      // Use StatefulBuilder to update content dynamically
+                                                      builder: (BuildContext context, StateSetter setState) {
+                                                        return Row(
+                                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                                          mainAxisAlignment: MainAxisAlignment.start,
+                                                          children: [
+                                                            CircularProgressIndicator(
+                                                              backgroundColor: Colors.grey[700],
+                                                              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                                            ),
+                                                            const Padding(
+                                                              padding: EdgeInsets.only(left: 16.0),
+                                                              child: Text('Authenticating...', style: TextStyle(color: Colors.white)),
+                                                            ),
+
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                                    duration: const Duration(days: 365), // Make it long so we can dismiss manually
+                                                    behavior: SnackBarBehavior.floating, // Can make it floating if preferred
+                                                  ),
+                                                );
+                                              }
 
                                               SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
 
@@ -268,6 +298,10 @@ class _LoginPageState extends State<LoginPage> {
                                               await sharedPreferences.setString('serialNo', serialNo);
                                               if (context.mounted) {
                                                 await ApiService().authCodeLogin(context, sharedPreferences, codeController.text, serialNo);
+                                              }
+
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context).hideCurrentSnackBar();
                                               }
                                             }
                                           },

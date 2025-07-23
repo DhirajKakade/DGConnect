@@ -57,9 +57,9 @@ class MainPage extends StatelessWidget {
       },
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Brand-M',
+        title: 'DGTOOHL',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
+          primarySwatch: Colors.red,
           visualDensity: VisualDensity.adaptivePlatformDensity,
         ),
         home: /*SplashApp()*/ /* VideoPlayerApp()*/ /*ScreenSelectionPage(

@@ -54,3 +54,7 @@ onScreenSelection(BuildContext context, SharedPreferences prefs, String serialno
     },
   );
 }
+
+Widget appLogo(Size size, {int padding = 5, String path = "assets/logo_white.png"}) {
+  return Hero(tag: "logo", child: Padding(padding: EdgeInsets.symmetric(horizontal: size.width / padding), child: Image.asset(path)));
+}

@@ -6,6 +6,7 @@ import 'package:dgplay/play_list_new_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
+import 'package:ota_update/ota_update.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
@@ -49,6 +50,8 @@ class ApiService {
           );
         }
       }
+    } else {
+      print(response.body);
     }
   }
 
@@ -115,9 +118,57 @@ class ApiService {
 
     if (data["status"] != null && data["status"] is bool) {
       if (data["status"]) {
+        if (data["apkUrl"] != null && data["apkUrl"] is String) {
+          performOtaUpdate(data["apkUrl"]);
+        }
         return true;
       }
     }
+    // performOtaUpdate("https://github.com/DhirajKakade/DGConnect/raw/refs/heads/master/assets/dgtoohl_app_v1.apk");
     return false;
+  }
+}
+
+void performOtaUpdate(String apkUrl) {
+  try {
+    OtaUpdate().execute(
+      apkUrl, destinationFilename: 'dgthoohl.apk',
+      // sha256checksum: "d6da28451a1e15cf7a75f2c3f151befad3b80ad0bb232ab15c20897e54f21478", // Optional: Highly recommended for integrity
+    ).listen((OtaEvent event) {
+        print('Event:::: ${event.status}');
+        switch (event.status) {
+          case OtaStatus.DOWNLOADING:
+            // Handle download progress: event.value is percentage
+            print('Downloading: ${event.value}%');
+            // You can update a SnackBar with this progress
+            break;
+          case OtaStatus.INSTALLING:
+            print('Installing...');
+            break;
+          case OtaStatus.ALREADY_RUNNING_ERROR:
+            print('Update already running.');
+            break;
+          case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
+            print('Permission not granted.');
+            break;
+          case OtaStatus.DOWNLOAD_ERROR:
+            print('Download error: ${event.value}');
+            break;
+          case OtaStatus.CHECKSUM_ERROR:
+            print('Checksum error!');
+            break;
+          case OtaStatus.INTERNAL_ERROR:
+            print('Internal error: ${event.value}');
+            break;
+          case OtaStatus.CANCELED:
+            print('Update canceled.');
+            break;
+          default:
+            break;
+        }
+      },
+    );
+  } catch (e) {
+    print('Failed to start OTA update: $e');
   }
 }
