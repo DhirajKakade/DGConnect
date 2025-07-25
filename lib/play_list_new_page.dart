@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:dgplay/api_service.dart';
 import 'package:dgplay/functions.dart';
 import 'package:dgplay/screen_selection_page.dart';
@@ -69,6 +68,7 @@ class _PlayListState extends State<PlayList> {
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
+    // data.clear();
     return Scaffold(
       body: Container(
         color: Colors.black,
@@ -82,7 +82,18 @@ class _PlayListState extends State<PlayList> {
                     alignment: Alignment.center,
                     children: [
                       if (selectedData["media_type"] == "mp4") ...[
-                        Video(controller: videoController, width: double.infinity, height: double.infinity, fit: BoxFit.fill, wakelock: true, fill: Colors.transparent, alignment: Alignment.center),
+                        MaterialVideoControlsTheme(
+                            normal: const MaterialVideoControlsThemeData(displaySeekBar: false, bottomButtonBar: [
+                              MaterialPositionIndicator(),
+                            ],controlsHoverDuration: Duration(seconds: 1)),
+                            fullscreen: const MaterialVideoControlsThemeData(
+                              displaySeekBar: false,
+                              automaticallyImplySkipNextButton: false,
+                              automaticallyImplySkipPreviousButton: false,
+                            ),
+                            child: Video(controller: videoController, width: double.infinity, height: double.infinity, fit: BoxFit.fill, wakelock: true, fill: Colors.transparent, alignment: Alignment.center)),
+
+                        // Video(controller: videoController, width: double.infinity, height: double.infinity, fit: BoxFit.fill, wakelock: true, fill: Colors.transparent, alignment: Alignment.center)
                       ] else if (selectedData["media_type"] == "jpg" || selectedData["media_type"] == "png" || selectedData["media_type"] == "jpeg") ...[
                         Image.file(
                           width: double.infinity,
@@ -127,6 +138,7 @@ class _PlayListState extends State<PlayList> {
     if (data.isEmpty) {
       return;
     }
+    await player.stop();
     selectedData.addAll(data[index]);
     int iDuration = int.tryParse(selectedData["duration_sec"]) ?? 0;
     String mediaUrl = selectedData["media_url"];
@@ -143,8 +155,8 @@ class _PlayListState extends State<PlayList> {
       debugPrint("playing media::: ${selectedData["media_id"]},${selectedData["media_type"]} ${selectedData["file"]}");
 
       if (selectedData["media_type"] == "mp4") {
-        // await player.stop(); // Stop current playback
-        await player.open(Media(selectedData["file"]), play: true);
+        await player.open(Media(selectedData["file"]), play: true,);
+        // await player.add(Media(selectedData["file"]));
       } else {
         updateTime(iDuration, data);
       }
@@ -263,7 +275,6 @@ class _PlayListState extends State<PlayList> {
   }
 
   initData() async {
-    data.clear();
     String screenid = widget.prefs.getString("screenid") ?? "";
     if (screenid.isEmpty) {
       Navigator.pushAndRemoveUntil(
@@ -277,7 +288,12 @@ class _PlayListState extends State<PlayList> {
       return false;
     } else {
       List<dynamic> playList = await ApiService().getPlayList(widget.prefs, widget.serialno, screenid, widget.custid, widget.userid);
-      data.addAll(playList);
+
+      if (playList.isNotEmpty) {
+        data.clear();
+        data.addAll(playList);
+      }
+
       isLoading = false;
       return true;
     }
