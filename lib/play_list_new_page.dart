@@ -236,8 +236,8 @@ class _PlayListState extends State<PlayList> {
     // await checkForcedUpdate({"serial_no": widget.serialno, "screen_id" : screenid, "device_uuid" : widget.serialno});
 
     if (lastCount > 2) {
-      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      // DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      // AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
       String formattedDate = "${now.year}-${now.month}-${now.day}";
       Map<String, String> body = {

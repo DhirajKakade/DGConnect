@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:dgplay/constants/api_constants.dart';
 import 'package:dgplay/play_list_new_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 import 'package:ota_update/ota_update.dart';
@@ -121,6 +122,12 @@ class ApiService {
         if (data["apkUrl"] != null && data["apkUrl"] is String) {
           performOtaUpdate(data["apkUrl"]);
         }
+
+        if (data["deleteCache"] != null && data["deleteCache"] is bool && data["deleteCache"]) {
+          DefaultCacheManager manager = DefaultCacheManager();
+          await manager.emptyCache();
+        }
+
         return true;
       }
     }
@@ -131,10 +138,13 @@ class ApiService {
 
 void performOtaUpdate(String apkUrl) {
   try {
-    OtaUpdate().execute(
+    OtaUpdate()
+        .execute(
       apkUrl, destinationFilename: 'dgthoohl.apk',
       // sha256checksum: "d6da28451a1e15cf7a75f2c3f151befad3b80ad0bb232ab15c20897e54f21478", // Optional: Highly recommended for integrity
-    ).listen((OtaEvent event) {
+    )
+        .listen(
+      (OtaEvent event) {
         print('Event:::: ${event.status}');
         switch (event.status) {
           case OtaStatus.DOWNLOADING:
